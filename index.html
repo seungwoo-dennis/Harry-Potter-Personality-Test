@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Which Hogwarts Witch or Wizard Are You?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --midnight-deep:#0a0b1a;
+    --midnight:#14172e;
+    --plum:#2e2044;
+    --plum-light:#3c2c56;
+    --gold:#c9a24b;
+    --gold-soft:#e8cd8a;
+    --ember:#e0703a;
+    --parchment:#ede7f6;
+    --muted:#9c93b8;
+    --line:rgba(201,162,75,0.25);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(ellipse at 20% -10%, rgba(62,44,86,0.55), transparent 55%),
+      radial-gradient(ellipse at 85% 110%, rgba(224,112,58,0.10), transparent 45%),
+      linear-gradient(180deg, var(--midnight-deep), var(--midnight) 60%, var(--midnight-deep));
+    color:var(--parchment);
+    font-family:'Cormorant Garamond', serif;
+    position:relative;
+    overflow-x:hidden;
+    transition:background 1.1s ease;
+  }
+  .stars{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+  .stars span{
+    position:absolute; width:2px;height:2px;border-radius:50%;
+    background:var(--gold-soft); opacity:.55;
+    animation:twinkle 4.5s ease-in-out infinite;
+  }
+  @keyframes twinkle{0%,100%{opacity:.15;}50%{opacity:.85;}}
+  @media (prefers-reduced-motion: reduce){
+    .stars span{animation:none;opacity:.35;}
+    *{animation-duration:.001s !important; transition-duration:.15s !important;}
+  }
+
+  .eyebrow{
+    font-family:'Cinzel', serif; font-weight:600; letter-spacing:.28em;
+    text-transform:uppercase; font-size:.72rem; color:var(--gold);
+    display:inline-block; margin-bottom:.9rem;
+  }
+  h1,h2,h3{font-family:'Cinzel', serif; font-weight:600; margin:0; color:var(--gold-soft);}
+
+  #app{position:relative; z-index:1; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:5vh 1.25rem;}
+  .view{display:none; width:100%; max-width:640px; margin:0 auto; animation:fadeUp .7s ease both;}
+  .view.active{display:block;}
+  @keyframes fadeUp{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);}}
+
+  /* ---------- START VIEW ---------- */
+  #view-start{text-align:center; display:flex; flex-direction:column; align-items:center;}
+  .sorting-hat-mark{display:block; width:64px;height:64px;margin:0 0 1.5rem;opacity:.9;}
+  #view-start h1{font-size:clamp(2rem, 5vw, 2.9rem); line-height:1.15; margin-bottom:1rem;}
+  #view-start p.lede{color:var(--muted); font-size:1.2rem; font-style:italic; margin:0 auto 2.2rem; max-width:460px;}
+  .btn{
+    font-family:'Cinzel', serif; font-weight:600; letter-spacing:.08em;
+    text-transform:uppercase; font-size:.85rem; color:var(--midnight-deep);
+    background:linear-gradient(135deg, var(--gold-soft), var(--gold));
+    border:none; padding:.95rem 2.1rem; border-radius:2px; cursor:pointer;
+    box-shadow:0 0 0 1px rgba(201,162,75,.4), 0 8px 24px rgba(201,162,75,.18);
+    transition:transform .25s ease, box-shadow .25s ease;
+  }
+  .btn:hover{transform:translateY(-2px); box-shadow:0 0 0 1px rgba(201,162,75,.6), 0 12px 30px rgba(201,162,75,.3);}
+  .btn:focus-visible{outline:2px solid var(--ember); outline-offset:3px;}
+  .btn-ghost{
+    background:transparent; color:var(--gold-soft);
+    box-shadow:inset 0 0 0 1px var(--line);
+  }
+  .btn-ghost:hover{box-shadow:inset 0 0 0 1px var(--gold); transform:translateY(-2px);}
+
+  /* ---------- CONSTELLATION PROGRESS ---------- */
+  .constellation{display:flex; justify-content:center; margin-bottom:2.2rem;}
+  .constellation svg{overflow:visible;}
+  .const-line{stroke:var(--line); stroke-width:1.5; fill:none;}
+  .const-line.lit{stroke:var(--gold); transition:stroke 1s ease;}
+  .const-dot{fill:var(--midnight); stroke:var(--muted); stroke-width:1.5; transition:all .5s ease;}
+  .const-dot.lit{fill:var(--gold); stroke:var(--gold-soft); filter:drop-shadow(0 0 5px var(--gold));}
+
+  /* ---------- QUIZ VIEW ---------- */
+  .q-eyebrow{text-align:center; display:block; color:var(--muted); font-family:'Cinzel',serif; letter-spacing:.2em; font-size:.7rem; text-transform:uppercase; margin-bottom:.6rem;}
+  .q-card{
+    background:linear-gradient(180deg, rgba(46,32,68,0.55), rgba(20,23,46,0.55));
+    border:1px solid var(--line); border-radius:6px; padding:2.4rem 2rem;
+    backdrop-filter:blur(6px);
+  }
+  .q-text{font-size:clamp(1.35rem,3vw,1.65rem); text-align:center; line-height:1.4; margin-bottom:2rem; color:var(--parchment);}
+  .answers{display:flex; flex-direction:column; gap:.7rem;}
+  .answer{
+    text-align:left; font-family:'Cormorant Garamond', serif; font-size:1.12rem;
+    color:var(--parchment); background:rgba(237,231,246,0.03);
+    border:1px solid var(--line); border-radius:4px; padding:.95rem 1.2rem;
+    cursor:pointer; transition:all .25s ease; position:relative;
+  }
+  .answer:hover{border-color:var(--gold); background:rgba(201,162,75,.08); transform:translateX(4px);}
+  .answer:focus-visible{outline:2px solid var(--ember); outline-offset:2px;}
+  .answer .mark{color:var(--gold); font-family:'Cinzel',serif; margin-right:.6rem; font-size:.85rem;}
+
+  /* ---------- RESULT VIEW ---------- */
+  #view-result{text-align:center; max-width:560px;}
+  .sigil-wrap{width:150px;height:150px;margin:0 auto 1rem; position:relative;}
+  .sigil-svg{width:100%;height:100%;}
+  .sigil-ring{fill:none; stroke:var(--result-accent, var(--gold)); stroke-width:1.6; opacity:.85;}
+  .sigil-fill{fill:none; stroke:var(--result-accent, var(--gold)); stroke-width:3.2; stroke-linecap:round; stroke-linejoin:round;}
+  .sigil-fill.solid{fill:var(--result-accent, var(--gold)); stroke:none;}
+  .result-eyebrow{color:var(--result-accent, var(--gold)); opacity:.9;}
+  #result-name{font-size:clamp(2rem,5vw,2.6rem); margin-bottom:.15rem;}
+  #result-title{font-style:italic; font-family:'Cormorant Garamond',serif; font-weight:500; color:var(--muted); font-size:1.15rem; margin-bottom:1.6rem;}
+  #result-mbti{
+    font-family:'Cinzel',serif; letter-spacing:.3em; font-size:.85rem; color:var(--result-accent, var(--gold));
+    border:1px solid var(--line); display:inline-block; padding:.3rem .9rem; border-radius:2px; margin-bottom:1.6rem;
+  }
+  #result-desc{font-size:1.18rem; line-height:1.6; color:var(--parchment); margin-bottom:2rem;}
+  .fortune{
+    border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+    padding:1.4rem 1rem; margin-bottom:2.2rem;
+  }
+  .fortune .eyebrow{color:var(--result-accent, var(--gold));}
+  .fortune p{font-style:italic; font-size:1.25rem; margin:0; color:var(--gold-soft);}
+  .result-actions{display:flex; gap:.8rem; justify-content:center; flex-wrap:wrap;}
+
+  #share-canvas{display:none;}
+  footer.credit{
+    position:relative; z-index:1; text-align:center; color:var(--muted);
+    font-size:.75rem; letter-spacing:.05em; padding:0 1rem 2.5rem; opacity:.6;
+  }
+  @media (max-width:480px){
+    .q-card{padding:1.7rem 1.2rem;}
+    .result-actions{flex-direction:column; align-items:stretch;}
+  }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<div id="app">
+
+  <!-- START -->
+  <section class="view active" id="view-start">
+    <svg class="sorting-hat-mark" viewBox="0 0 100 100" fill="none" stroke="var(--gold)" stroke-width="1.8">
+      <circle cx="50" cy="50" r="38"/>
+      <ellipse cx="50" cy="72" rx="26" ry="6"/>
+      <path d="M38 66 L46 24 Q50 18 56 22 L64 66"/>
+      <path d="M36 65 Q50 70 64 65"/>
+      <path d="M52 34 L52 42 M48 38 L56 38"/>
+    </svg>
+    <span class="eyebrow">A Divination</span>
+    <h1>Which Hogwarts Witch or&nbsp;Wizard&nbsp;Are&nbsp;You?</h1>
+    <p class="lede">Eight questions. The stars, and your own instincts, will do the rest.</p>
+    <button class="btn" id="btn-start">Begin the Reading</button>
+  </section>
+
+  <!-- QUIZ -->
+  <section class="view" id="view-quiz">
+    <div class="constellation">
+      <svg id="const-svg" width="280" height="46" viewBox="0 0 280 46"></svg>
+    </div>
+    <span class="q-eyebrow" id="q-counter">Question 1 of 8</span>
+    <div class="q-card">
+      <p class="q-text" id="q-text"></p>
+      <div class="answers" id="q-answers"></div>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section class="view" id="view-result">
+    <div class="sigil-wrap" id="sigil-wrap"></div>
+    <span class="eyebrow result-eyebrow">You are most like</span>
+    <h1 id="result-name"></h1>
+    <p id="result-title"></p>
+    <span id="result-mbti"></span>
+    <p id="result-desc"></p>
+    <div class="fortune">
+      <span class="eyebrow">Your fortune for today</span>
+      <p id="result-fortune"></p>
+    </div>
+    <div class="result-actions">
+      <button class="btn" id="btn-retry">Consult the Stars Again</button>
+      <button class="btn btn-ghost" id="btn-save">Save Your Fortune</button>
+    </div>
+  </section>
+
+</div>
+
+<canvas id="share-canvas" width="1000" height="1250"></canvas>
+
+<footer class="credit">A very unofficial Sorting &middot; not affiliated with J.K. Rowling or Warner Bros.</footer>
+
+<script>
+/* =========================================================
+   BACKGROUND STARFIELD
+========================================================= */
+(function(){
+  const box = document.getElementById('stars');
+  const n = 60;
+  for(let i=0;i<n;i++){
+    const s = document.createElement('span');
+    s.style.left = Math.random()*100+'%';
+    s.style.top = Math.random()*100+'%';
+    s.style.animationDelay = (Math.random()*4.5)+'s';
+    s.style.width = s.style.height = (Math.random()<0.15 ? '3px':'1.5px');
+    box.appendChild(s);
+  }
+})();
+
+/* =========================================================
+   QUESTION BANK — 4 questions per axis, 2 sampled each play
+========================================================= */
+const POOLS = {
+  EI: [
+    { text:"It's the Yule Ball and the Great Hall is dazzling. Where do you end up?",
+      answers:[
+        {t:"E", text:"Right in the middle of the dance floor, dragging reluctant friends along"},
+        {t:"E", text:"Bouncing between tables, trading gossip and butterbeer"},
+        {t:"I", text:"By the enchanted ceiling's edge, quietly watching the candles drift"},
+        {t:"I", text:"Out in the courtyard, having one real conversation instead of twenty small ones"}
+      ]},
+    { text:"Your common room is throwing an impromptu party after a Quidditch win. You...",
+      answers:[
+        {t:"E", text:"Lead the house song, badly, at full volume"},
+        {t:"E", text:"Go introduce yourself to the first-year nobody's talked to yet"},
+        {t:"I", text:"Watch happily from the stairs, in no rush to join in"},
+        {t:"I", text:"Slip off to the library — it'll be blissfully empty tonight"}
+      ]},
+    { text:"You've just been Sorted and don't know a soul at your table. Your move?",
+      answers:[
+        {t:"E", text:"Turn to the nearest stranger and start talking immediately"},
+        {t:"E", text:"Ask everyone's name in the first five minutes"},
+        {t:"I", text:"Listen to the conversations around you before joining in"},
+        {t:"I", text:"Focus on the feast — introductions can happen naturally, later"}
+      ]},
+    { text:"Professor Binns assigns a group project. Your first move is to...",
+      answers:[
+        {t:"E", text:"Rally everyone into a loud, lively planning session on the spot"},
+        {t:"E", text:"Volunteer to present — talking it through is how you think"},
+        {t:"I", text:"Ask to research your part alone and merge it in later"},
+        {t:"I", text:"Write your ideas out first, then share once they're properly formed"}
+      ]},
+    { text:"The Hogwarts Express has just left the station. In your compartment, you...",
+      answers:[
+        {t:"E", text:"Wander the corridor, poking your head into other compartments to say hello"},
+        {t:"E", text:"Strike up a conversation with whoever's sitting across from you"},
+        {t:"I", text:"Watch the countryside go by, content in the quiet"},
+        {t:"I", text:"Bring a book, happy to be left to it for the ride"}
+      ]},
+    { text:"You've had an exhausting week of classes. To recover, you'd rather...",
+      answers:[
+        {t:"E", text:"Gather your friends for a loud game of Exploding Snap in the common room"},
+        {t:"E", text:"Head down to whatever's happening in the Great Hall tonight"},
+        {t:"I", text:"Find a quiet corner of the library, alone with your thoughts"},
+        {t:"I", text:"Take a solitary walk around the grounds until you feel like yourself again"}
+      ]}
+  ],
+  SN: [
+    { text:"Professor Sprout hands you a strange new bulb in Herbology. You...",
+      answers:[
+        {t:"S", text:"Follow the textbook instructions exactly, step by careful step"},
+        {t:"S", text:"Examine its texture, weight, and smell before touching anything else"},
+        {t:"N", text:"Start wondering what it might grow into if you experimented a little"},
+        {t:"N", text:"Imagine what spells or potions it could be useful for one day"}
+      ]},
+    { text:"Choosing your third-year elective, you're drawn toward...",
+      answers:[
+        {t:"S", text:"Care of Magical Creatures — hands-on, real, immediate"},
+        {t:"S", text:"Ancient Runes — precise symbols with exact meanings"},
+        {t:"N", text:"Divination — reading the shape of what might be"},
+        {t:"N", text:"Arithmancy — the hidden patterns behind the numbers"}
+      ]},
+    { text:"A riddle blocks your path, sphinx-style. You...",
+      answers:[
+        {t:"S", text:"Work through it logically, using only what you know for certain"},
+        {t:"S", text:"Look for the most literal, obvious answer first"},
+        {t:"N", text:"Let your mind wander toward the wordplay and hidden meanings"},
+        {t:"N", text:"Trust the first strange answer that pops into your head"}
+      ]},
+    { text:"Asked to describe the memory behind your Patronus, you focus on...",
+      answers:[
+        {t:"S", text:"The exact moment — the smell of the room, the sound, the light"},
+        {t:"S", text:"One real memory you can still picture in detail"},
+        {t:"N", text:"The feeling it represents, more than the memory itself"},
+        {t:"N", text:"An idea of happiness rather than any one single moment"}
+      ]},
+    { text:"In History of Magic, you find yourself most drawn to...",
+      answers:[
+        {t:"S", text:"The concrete facts and dates — what actually happened, in order"},
+        {t:"S", text:"Primary sources: letters, artifacts, things you can hold and verify"},
+        {t:"N", text:"The bigger 'why' behind events — what they meant, what they led to"},
+        {t:"N", text:"Imagining how differently things might have gone"}
+      ]},
+    { text:"You find an unlabeled potion in the store cupboard. You...",
+      answers:[
+        {t:"S", text:"Test it carefully against known recipes until you identify it for certain"},
+        {t:"S", text:"Check the color, smell, and consistency against your notes, step by step"},
+        {t:"N", text:"Get curious about who might have left it there and why"},
+        {t:"N", text:"Start imagining what it could be used for, known recipe or not"}
+      ]}
+  ],
+  TF: [
+    { text:"A friend's plan for sneaking into the kitchens is obviously flawed. You...",
+      answers:[
+        {t:"T", text:"Point out exactly why it won't work, before someone gets caught"},
+        {t:"T", text:"Redesign the plan to be more efficient, feelings aside"},
+        {t:"F", text:"Go along with it anyway — they'd be crushed if you shot it down"},
+        {t:"F", text:"Gently suggest a tweak so nobody's excitement gets ruined"}
+      ]},
+    { text:"The Sorting Hat is taking an unusually long time with you. What matters most to you in its choice?",
+      answers:[
+        {t:"T", text:"Where your skills will be put to the best, most logical use"},
+        {t:"T", text:"Where you'll accomplish the most, objectively"},
+        {t:"F", text:"Where you'll feel like you truly belong"},
+        {t:"F", text:"Where the people matter more to you than the house colors"}
+      ]},
+    { text:"A classmate is upset after failing an exam. You...",
+      answers:[
+        {t:"T", text:"Help them find exactly where it went wrong, so it won't happen again"},
+        {t:"T", text:"Give a clear, honest assessment, even if it stings a little"},
+        {t:"F", text:"Sit with them first — the corrections can wait"},
+        {t:"F", text:"Reassure them before anything else; grades aren't everything"}
+      ]},
+    { text:"Choosing between two spells to master first, you pick based on...",
+      answers:[
+        {t:"T", text:"Which is objectively more useful and powerful"},
+        {t:"T", text:"Which makes the most logical sense to learn first"},
+        {t:"F", text:"Which one simply feels right for who you are"},
+        {t:"F", text:"Which one would help the people you care about most"}
+      ]},
+    { text:"You're made a prefect and have to report a friend for breaking curfew. You...",
+      answers:[
+        {t:"T", text:"Report it — rules matter, and exceptions undermine the whole system"},
+        {t:"T", text:"Weigh the facts of the situation and decide based on what's fair"},
+        {t:"F", text:"Talk to them privately first, before deciding what to do"},
+        {t:"F", text:"Struggle with it — the friendship weighs heavier than the rulebook"}
+      ]},
+    { text:"A heated debate breaks out in class over a controversial bit of wizarding history. You...",
+      answers:[
+        {t:"T", text:"Focus on which argument is best supported by the evidence"},
+        {t:"T", text:"Point out the flaws in both sides' logic, even if it annoys people"},
+        {t:"F", text:"Pay attention to how the discussion is making people feel"},
+        {t:"F", text:"Try to find the common ground everyone can live with"}
+      ]}
+  ],
+  JP: [
+    { text:"It's the night before your O.W.L.s. Your desk looks like...",
+      answers:[
+        {t:"J", text:"A color-coded revision schedule, followed to the hour"},
+        {t:"J", text:"Neatly organized notes, finished a week ago"},
+        {t:"P", text:"A glorious chaos of half-read books you'll sort through tonight"},
+        {t:"P", text:"Whatever you feel like reviewing in the moment"}
+      ]},
+    { text:"Packing your trunk for the Hogwarts Express, you...",
+      answers:[
+        {t:"J", text:"Packed days ago, everything checked off a list"},
+        {t:"J", text:"Have a place for everything, decided well in advance"},
+        {t:"P", text:"Are still throwing things in five minutes before you leave"},
+        {t:"P", text:"Figure you'll remember whatever you actually need"}
+      ]},
+    { text:"Given a free afternoon in Hogsmeade, you...",
+      answers:[
+        {t:"J", text:"Already have a plan: Honeydukes, then the post office, then tea — in order"},
+        {t:"J", text:"Like knowing roughly what you'll do and when"},
+        {t:"P", text:"Wander and see what catches your eye"},
+        {t:"P", text:"Decide when you get there, depending on the mood"}
+      ]},
+    { text:"A professor moves a deadline up at the last minute. You...",
+      answers:[
+        {t:"J", text:"Feel mildly thrown — you'd already planned around the old one"},
+        {t:"J", text:"Quickly rebuild your schedule to fit the new plan"},
+        {t:"P", text:"Shrug it off — plans were always going to shift anyway"},
+        {t:"P", text:"Feel almost relieved; more room to improvise"}
+      ]},
+    { text:"Your approach to Quidditch tryouts (or any big event) is to...",
+      answers:[
+        {t:"J", text:"Have trained on a set schedule for weeks leading up to it"},
+        {t:"J", text:"Show up with a clear plan for exactly how you'll approach it"},
+        {t:"P", text:"Trust you'll rise to the moment when it actually arrives"},
+        {t:"P", text:"Keep your options open and adjust once you see how it's going"}
+      ]},
+    { text:"Your ideal Saturday at Hogwarts looks like...",
+      answers:[
+        {t:"J", text:"A set list of errands and revision, crossed off one by one, done by lunch"},
+        {t:"J", text:"Loosely scheduled — breakfast, library, dinner — but a schedule nonetheless"},
+        {t:"P", text:"Entirely unplanned, led by whatever sounds good in the moment"},
+        {t:"P", text:"Decided the second you wake up, depending on the weather and your mood"}
+      ]}
+  ]
+};
+
+/* =========================================================
+   CHARACTERS — colors, sigil accents, copy, fortunes
+========================================================= */
+function sigilSvg(accent){
+  return `<svg class="sigil-svg" viewBox="0 0 100 100"><circle class="sigil-ring" cx="50" cy="50" r="38"/>${accent}</svg>`;
+}
+const CHARACTERS = {
+  ISTJ:{ name:"Severus Snape", title:"The Potions Master", accent:"#4c6b4f",
+    colors:["#0e1a10","#1f3320","#4c6b4f"],
+    sigil:sigilSvg('<path class="sigil-fill" d="M45 22 L45 34 L33 62 Q33 70 41 70 L59 70 Q67 70 67 62 L55 34 L55 22"/><path class="sigil-fill" d="M43 22 L57 22"/><circle class="sigil-fill solid" cx="50" cy="58" r="3"/>'),
+    desc:"Defined by honor and duty, you take every task seriously and hold yourself to your own exacting standard. Reserved by nature, you'd rather work alone — but when it matters, your loyalty runs deeper than anyone gives you credit for.",
+    fortunes:["A guarded heart is not a cold one. Let one person closer today.","Discipline you've kept in private will be noticed today, whether you like it or not.","The potion that looks plain is often the one that matters most."] },
+  ISFJ:{ name:"Neville Longbottom", title:"The Defender", accent:"#b08a2e",
+    colors:["#1c1608","#3a2c0e","#b08a2e"],
+    sigil:sigilSvg('<path class="sigil-fill" d="M50 22 L43 36 L57 36 Z"/><path class="sigil-fill" d="M50 36 L50 60"/><path class="sigil-fill" d="M37 58 L63 58"/><path class="sigil-fill" d="M50 60 L50 70"/><circle class="sigil-fill solid" cx="50" cy="74" r="3.5"/>'),
+    desc:"Loyal, kind, and quietly observant, you notice what others miss and remember what others forget — birthdays, kindnesses, slights. You'll go to any length for the people and causes you believe in, even when your courage takes a while to catch up.",
+    fortunes:["The quiet ones are watching closer than anyone realizes — trust what you've noticed today.","Courage you've been growing in secret is about to show itself.","Something you've protected for a long time is finally safe."] },
+  INFJ:{ name:"Remus Lupin", title:"The Counselor", accent:"#6c7bb0",
+    colors:["#0d0f1e","#1c2140","#6c7bb0"],
+    sigil:sigilSvg('<path class="sigil-fill" d="M62 32 A20 20 0 1 0 62 68 A15 15 0 1 1 62 32 Z"/>'),
+    desc:"You seek meaning in ideas, people, and the spaces between them. Organized yet deeply private, you understand what motivates others almost before they do — and you carry more of other people's weight than you let on.",
+    fortunes:["What you understand about someone today, keep gently — it isn't yours to share yet.","A private worry loses its power once spoken to the right person.","The full moon always passes. So will this."] },
+  INTJ:{ name:"Draco Malfoy", title:"The Strategist", accent:"#7f9e6e",
+    colors:["#10160c","#243219","#7f9e6e"],
+    sigil:sigilSvg('<path class="sigil-fill" d="M30 74 L66 26" stroke-linecap="round"/><path class="sigil-fill" d="M35 66 L43 58 M44 54 L52 46 M53 42 L61 34" stroke-linecap="round"/><circle class="sigil-fill solid" cx="66" cy="26" r="2.2"/>'),
+    desc:"A natural strategist who sees patterns others miss, you plan several moves ahead and expect the world to keep up. Independent and sharp, your confidence can look like arrogance — but underneath it is someone working very hard to prove something.",
+    fortunes:["The plan you're second-guessing was right the first time.","Pride built to protect you doesn't have to keep protecting you today.","Someone is about to underestimate you. Let them."] },
+  ISTP:{ name:"Harry Potter", title:"The Craftsman", accent:"#b6482f",
+    colors:["#160c08","#331a12","#b6482f"],
+    sigil:sigilSvg('<path class="sigil-fill" d="M54 20 L38 54 L50 54 L46 80 L66 44 L52 44 Z"/>'),
+    desc:"Fiercely independent and adventuresome, you don't crave attention — you're drawn to your own pursuits and trust your instincts in the moment more than any rulebook. Loyal to a small circle, and quietly braver than you think you are.",
+    fortunes:["The scar you've stopped noticing is still proof of what you survived.","Trust the instinct before you trust the instruction manual, today especially.","You don't need to do this one alone."] },
+  ISFP:{ name:"Rubeus Hagrid", title:"The Artist", accent:"#8a6a3f",
+    colors:["#160f06","#332310","#8a6a3f"],
+    sigil:sigilSvg('<ellipse class="sigil-fill" cx="50" cy="54" rx="17" ry="23"/><path class="sigil-fill" d="M34 50 L42 44 L48 56 L54 44 L60 56 L66 50" stroke-linecap="round"/>'),
+    desc:"Quiet, warm, and sensitive under a larger-than-life exterior, you're deeply loyal to the people — and creatures — that others overlook or fear. You rarely force your opinions on anyone, but you feel everything, and take it all a little personally.",
+    fortunes:["Something small and overlooked needs your patience today — it'll be worth it.","A soft heart is not a weakness, whatever anyone's told you.","The creature everyone else fears just needs someone who won't run."] },
+  INFP:{ name:"Luna Lovegood", title:"The Dreamer", accent:"#8a86c9",
+    colors:["#0e0d1c","#211e3f","#8a86c9"],
+    sigil:sigilSvg('<circle class="sigil-fill" cx="42" cy="46" r="9"/><circle class="sigil-fill" cx="58" cy="46" r="9"/><path class="sigil-fill" d="M42 55 L42 66 M58 55 L58 66"/>'),
+    desc:"Idealistic and loyal to what you value, you see possibilities everyone else has stopped looking for. Curious, gentle, and unbothered by what people think of you, you help people believe in things — including themselves — a little more than they expected to.",
+    fortunes:["The odd thing you believe that no one else does? Keep believing it a little longer.","Something invisible to everyone else is about to become very real.","You were right about more than they gave you credit for."] },
+  INTP:{ name:"Hermione Granger", title:"The Architect", accent:"#a06fc7",
+    colors:["#15091c","#301a3f","#a06fc7"],
+    sigil:sigilSvg('<path class="sigil-fill" d="M32 36 L50 30 L68 36 L68 66 L50 60 L32 66 Z"/><path class="sigil-fill" d="M50 30 L50 60"/>'),
+    desc:"A natural-born thinker, you'd rather build a working system than accept one at face value. Reserved and analytical, you correct people out of care more than pride, and you stay on task with a focus that quietly outlasts everyone around you.",
+    fortunes:["The answer you already worked out is the right one — say it out loud today.","Being right isn't the same as being finished. One more check won't hurt.","Someone needs your systems more than they'll admit."] },
+  ESTP:{ name:"Ginny Weasley", title:"The Promoter", accent:"#c4772e",
+    colors:["#1a0f05","#3c220c","#c4772e"],
+    sigil:sigilSvg('<path class="sigil-fill" d="M50 22 C42 34 34 44 36 56 C37 64 42 70 50 76 C58 70 63 64 64 56 C66 44 58 34 50 22 Z"/><path class="sigil-fill" d="M50 40 C46 46 43 51 44 57 C45 61 48 64 50 67 C52 64 55 61 56 57 C57 51 54 46 50 40 Z"/>'),
+    desc:"Flexible, quick, and clever under pressure, you'd rather act than overthink. You enjoy the thrill of the moment — competition, risk, a fast decision — and your energy tends to pull the people around you into motion, whether they meant to move or not.",
+    fortunes:["Trust the shot you're already lining up.","Today rewards speed over certainty. Take it.","Something you've been circling is ready to be caught."] },
+  ESFP:{ name:"Fred & George Weasley", title:"The Performers", accent:"#c25a94",
+    colors:["#1a0b14","#3c1930","#c25a94"],
+    sigil:sigilSvg('<path class="sigil-fill" d="M50 22 L50 34 M50 66 L50 78 M22 50 L34 50 M66 50 L78 50 M31 31 L39 39 M61 61 L69 69 M69 31 L61 39 M39 61 L31 69" stroke-linecap="round"/><circle class="sigil-fill solid" cx="50" cy="78" r="2"/><circle class="sigil-fill solid" cx="78" cy="50" r="2"/><circle class="sigil-fill solid" cx="22" cy="50" r="2"/><circle class="sigil-fill solid" cx="50" cy="22" r="2"/>'),
+    desc:"Outgoing, warm, and impossible to ignore, you make things fun for everyone within earshot. Spontaneous and generous with your time, you'd rather be surrounded by people making memories than sitting still — routine is your natural enemy.",
+    fortunes:["The joke you're holding back? Tell it. Someone needs the laugh.","Spontaneity serves you better than the schedule today.","A little chaos, well-aimed, solves more than caution would."] },
+  ENFP:{ name:"Ron Weasley", title:"The Champion", accent:"#d4903b",
+    colors:["#1c1204","#402c0c","#d4903b"],
+    sigil:sigilSvg('<path class="sigil-fill" d="M30 66 L38 40 L46 58 L50 34 L54 58 L62 40 L70 66 Z"/><circle class="sigil-fill solid" cx="38" cy="40" r="2.2"/><circle class="sigil-fill solid" cx="50" cy="34" r="2.2"/><circle class="sigil-fill solid" cx="62" cy="40" r="2.2"/>'),
+    desc:"Warm, enthusiastic, and full of ambition you sometimes doubt out loud, you adapt easily and hold your friends close to the heart. You believe firmly that life is meant to be lived — and your loyalty, once earned, is unshakeable.",
+    fortunes:["The move you're afraid looks reckless is actually the smart one.","Someone needs to hear how much you'd do for them. Tell them.","Your gut has been right more than you're giving it credit for."] },
+  ENTP:{ name:"Sirius Black", title:"The Inventor", accent:"#8b8fa0",
+    colors:["#0d0e12","#25272f","#8b8fa0"],
+    sigil:sigilSvg('<ellipse class="sigil-fill solid" cx="50" cy="64" rx="13" ry="9"/><circle class="sigil-fill solid" cx="32" cy="42" r="5.5"/><circle class="sigil-fill solid" cx="46" cy="30" r="5.5"/><circle class="sigil-fill solid" cx="60" cy="32" r="5.5"/><circle class="sigil-fill solid" cx="70" cy="46" r="5"/>'),
+    desc:"Quick, restless, and endlessly resourceful, you're happiest solving a new problem than repeating an old one. You're bored by routine and drawn to risk, and your loyalty to the people you love runs fierce enough to break rules — and cages — for them.",
+    fortunes:["Freedom looks good on you. Don't apologize for chasing it today.","An old rule doesn't apply to you the way you think it does.","The bold plan is the right one. Bring backup, though."] },
+  ESTJ:{ name:"Minerva McGonagall", title:"The Supervisor", accent:"#7458a8",
+    colors:["#100a1c","#291a3f","#7458a8"],
+    sigil:sigilSvg('<circle class="sigil-fill" cx="50" cy="56" r="17"/><path class="sigil-fill solid" d="M35 44 L39 26 L47 40 Z"/><path class="sigil-fill solid" d="M65 44 L61 26 L53 40 Z"/><circle class="sigil-fill solid" cx="43" cy="54" r="1.8"/><circle class="sigil-fill solid" cx="57" cy="54" r="1.8"/><path class="sigil-fill" d="M50 58 L50 61 M38 60 L28 58 M38 63 L28 65 M62 60 L72 58 M62 63 L72 65"/>'),
+    desc:"Practical, precise, and quick to implement a decision once it's made, you keep things — and people — running the way they're meant to. You're strict because you care about the outcome, and you notice effort even when you don't say so out loud.",
+    fortunes:["Firmness today is a form of care, even if it doesn't feel that way to them yet.","The standard you're holding people to is the same one you hold yourself to. That's fair.","Order restores itself faster when you stop apologizing for setting it."] },
+  ESFJ:{ name:"Lily Evans-Potter", title:"The Provider", accent:"#c9557c",
+    colors:["#1c0a12","#3f1a29","#c9557c"],
+    sigil:sigilSvg('<circle class="sigil-fill" cx="63" cy="50" r="9"/><circle class="sigil-fill" cx="54" cy="62" r="9"/><circle class="sigil-fill" cx="39" cy="58" r="9"/><circle class="sigil-fill" cx="39" cy="42" r="9"/><circle class="sigil-fill" cx="54" cy="38" r="9"/><circle class="sigil-fill solid" cx="50" cy="50" r="5"/>'),
+    desc:"Warmhearted and conscientious, you work hard to build harmony wherever you land, and people feel safer around you without quite knowing why. Reliable to a fault, your protectiveness over the people you love outlasts almost anything — even the worst of odds.",
+    fortunes:["Protection given freely, without needing thanks, is the rarest kind — and you give it well.","Love, plainly stated, will matter more today than you expect.","What you're guarding is worth every bit of the effort."] },
+  ENFJ:{ name:"Albus Dumbledore", title:"The Teacher", accent:"#5b8fc7",
+    colors:["#080d1a","#182a44","#5b8fc7"],
+    sigil:sigilSvg('<path class="sigil-fill" d="M50 44 Q30 28 20 42 Q36 46 50 52"/><path class="sigil-fill" d="M50 44 Q70 28 80 42 Q64 46 50 52"/><path class="sigil-fill solid" d="M50 40 L54 50 L50 58 L46 50 Z"/><path class="sigil-fill" d="M50 58 Q45 68 50 78 Q55 68 50 58"/>'),
+    desc:"Warm, perceptive, and deeply attuned to what motivates people, you find potential in others before they find it in themselves. You act as a catalyst for growth wherever you go — though you carry more private weight, and more old regret, than you show.",
+    fortunes:["Withholding the full truth today, even kindly, will cost more than telling it.","Someone is closer to their potential than they realize. Say so.","Even the wisest plans deserve one more question before you commit."] },
+  ENTJ:{ name:"James Potter", title:"The Maverick", accent:"#4f7fc9",
+    colors:["#0a0e1c","#1c2c4a","#4f7fc9"],
+    sigil:sigilSvg('<path class="sigil-fill" d="M46 64 L54 64 L58 76 L42 76 Z"/><path class="sigil-fill" d="M46 62 L36 42 M36 42 L28 34 M36 42 L32 28 M36 42 L42 30" stroke-linecap="round"/><path class="sigil-fill" d="M54 62 L64 42 M64 42 L72 34 M64 42 L68 28 M64 42 L58 30" stroke-linecap="round"/>'),
+    desc:"Blunt, decisive, and quick to lead, you see inefficiency and want to fix it immediately — sometimes before anyone's asked you to. Bold and enthusiastic about your own ideas, your confidence occasionally needs humbling, but your heart is bigger than your ego lets on.",
+    fortunes:["The bold call is the right one — just check who's standing behind you first.","Charm gets you in the room. Follow-through is what keeps you there today.","Someone you once underestimated is about to prove themselves. Notice it."] }
+};
+
+/* =========================================================
+   STATE + FLOW
+========================================================= */
+let selectedQuestions = [];
+let answerLog = []; // {axis, letter, order}
+let currentIndex = 0;
+let answerCounter = 0;
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function buildQuiz(){
+  selectedQuestions = [];
+  Object.keys(POOLS).forEach(axis=>{
+    const picks = shuffle(POOLS[axis]).slice(0,2);
+    picks.forEach(q=> selectedQuestions.push({axis, question:q}));
+  });
+  selectedQuestions = shuffle(selectedQuestions);
+  answerLog = [];
+  currentIndex = 0;
+  answerCounter = 0;
+}
+
+function switchView(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ---- constellation progress ---- */
+function buildConstellation(){
+  const svg = document.getElementById('const-svg');
+  svg.innerHTML = '';
+  const n = 8, w = 280, cy = 23;
+  const positions = [];
+  for(let i=0;i<n;i++){
+    positions.push({x: 14 + i*((w-28)/(n-1)), y: cy + (i%2===0? -8:8)});
+  }
+  for(let i=0;i<n-1;i++){
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',positions[i].x); line.setAttribute('y1',positions[i].y);
+    line.setAttribute('x2',positions[i+1].x); line.setAttribute('y2',positions[i+1].y);
+    line.setAttribute('class','const-line');
+    line.setAttribute('id','line-'+i);
+    svg.appendChild(line);
+  }
+  positions.forEach((p,i)=>{
+    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',5);
+    c.setAttribute('class','const-dot'); c.setAttribute('id','dot-'+i);
+    svg.appendChild(c);
+  });
+}
+function litConstellation(count){
+  for(let i=0;i<8;i++){
+    const dot = document.getElementById('dot-'+i);
+    if(dot) dot.classList.toggle('lit', i < count);
+  }
+  for(let i=0;i<7;i++){
+    const line = document.getElementById('line-'+i);
+    if(line) line.classList.toggle('lit', i < count-1);
+  }
+}
+
+/* ---- render question ---- */
+function renderQuestion(){
+  const item = selectedQuestions[currentIndex];
+  document.getElementById('q-counter').textContent = `Question ${currentIndex+1} of ${selectedQuestions.length}`;
+  document.getElementById('q-text').textContent = item.question.text;
+  const wrap = document.getElementById('q-answers');
+  wrap.innerHTML = '';
+  const marks = ['I','II','III','IV'];
+  shuffle(item.question.answers).forEach((ans, idx)=>{
+    const btn = document.createElement('button');
+    btn.className = 'answer';
+    btn.innerHTML = `<span class="mark">${marks[idx]}.</span>${ans.text}`;
+    btn.addEventListener('click', ()=> handleAnswer(item.axis, ans.t));
+    wrap.appendChild(btn);
+  });
+  litConstellation(answerCounter);
+}
+
+function handleAnswer(axis, letter){
+  answerCounter++;
+  answerLog.push({axis, letter, order:answerCounter});
+  litConstellation(answerCounter);
+  currentIndex++;
+  if(currentIndex < selectedQuestions.length){
+    setTimeout(renderQuestion, 180);
+  } else {
+    setTimeout(finishQuiz, 400);
+  }
+}
+
+function computeType(){
+  const axes = ['EI','SN','TF','JP'];
+  let type = '';
+  axes.forEach(axis=>{
+    const letters = axis.split('');
+    const votes = answerLog.filter(a=>a.axis===axis);
+    let countA = votes.filter(v=>v.letter===letters[0]).length;
+    let countB = votes.filter(v=>v.letter===letters[1]).length;
+    if(countA > countB) type += letters[0];
+    else if(countB > countA) type += letters[1];
+    else {
+      // tie-break: most recent answer on this axis wins
+      const last = votes.reduce((a,b)=> a.order>b.order? a:b);
+      type += last.letter;
+    }
+  });
+  return type;
+}
+
+function finishQuiz(){
+  const type = computeType();
+  showResult(type);
+}
+
+function showResult(type){
+  const c = CHARACTERS[type];
+  document.body.style.background =
+    `radial-gradient(ellipse at 15% -10%, ${c.colors[2]}33, transparent 55%),`+
+    `radial-gradient(ellipse at 90% 105%, ${c.colors[2]}22, transparent 45%),`+
+    `linear-gradient(180deg, ${c.colors[0]}, ${c.colors[1]} 55%, ${c.colors[0]})`;
+  document.documentElement.style.setProperty('--result-accent', c.accent);
+
+  document.getElementById('sigil-wrap').innerHTML = c.sigil;
+  document.getElementById('result-name').textContent = c.name;
+  document.getElementById('result-title').textContent = c.title;
+  document.getElementById('result-mbti').textContent = type;
+  document.getElementById('result-desc').textContent = c.desc;
+  document.getElementById('result-fortune').textContent =
+    c.fortunes[Math.floor(Math.random()*c.fortunes.length)];
+
+  switchView('view-result');
+  window.__lastType = type;
+}
+
+/* ---- share card ---- */
+function drawShareCard(){
+  const type = window.__lastType;
+  if(!type) return;
+  const c = CHARACTERS[type];
+  const canvas = document.getElementById('share-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  const grad = ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0, c.colors[0]);
+  grad.addColorStop(0.55, c.colors[1]);
+  grad.addColorStop(1, c.colors[0]);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,W,H);
+
+  // subtle stars
+  ctx.fillStyle = 'rgba(232,205,138,0.5)';
+  for(let i=0;i<70;i++){
+    const x = Math.random()*W, y = Math.random()*H*0.9;
+    const r = Math.random()<0.15 ? 2.4:1.2;
+    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+  }
+
+  // sigil ring
+  ctx.strokeStyle = c.accent;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(W/2, 300, 130, 0, Math.PI*2);
+  ctx.stroke();
+  ctx.fillStyle = c.accent;
+  ctx.font = '600 60px Georgia';
+  ctx.textAlign = 'center';
+  ctx.fillText(type, W/2, 320);
+
+  ctx.fillStyle = '#ede7f6';
+  ctx.font = '600 56px Georgia';
+  ctx.fillText(c.name, W/2, 510);
+
+  ctx.fillStyle = c.accent;
+  ctx.font = 'italic 34px Georgia';
+  ctx.fillText(c.title, W/2, 565);
+
+  ctx.strokeStyle = 'rgba(201,162,75,0.4)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(120,650); ctx.lineTo(W-120,650); ctx.stroke();
+
+  ctx.fillStyle = '#e8cd8a';
+  ctx.font = 'italic 32px Georgia';
+  wrapText(ctx, document.getElementById('result-fortune').textContent, W/2, 740, 760, 44);
+
+  ctx.strokeStyle = 'rgba(201,162,75,0.4)';
+  ctx.beginPath(); ctx.moveTo(120,900); ctx.lineTo(W-120,900); ctx.stroke();
+
+  ctx.fillStyle = 'rgba(237,231,246,0.55)';
+  ctx.font = '26px Georgia';
+  ctx.fillText('Which Hogwarts Witch or Wizard Are You?', W/2, 960);
+
+  const link = document.createElement('a');
+  link.download = `${c.name.replace(/[^a-z0-9]+/gi,'-')}-fortune.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+function wrapText(ctx, text, x, y, maxWidth, lineHeight){
+  const words = text.split(' ');
+  let line = '';
+  const lines = [];
+  words.forEach(word=>{
+    const test = line + word + ' ';
+    if(ctx.measureText(test).width > maxWidth && line !== ''){
+      lines.push(line); line = word + ' ';
+    } else { line = test; }
+  });
+  lines.push(line);
+  const startY = y - ((lines.length-1)*lineHeight)/2;
+  lines.forEach((l,i)=> ctx.fillText(l.trim(), x, startY + i*lineHeight));
+}
+
+/* ---- wire up ---- */
+document.getElementById('btn-start').addEventListener('click', ()=>{
+  buildQuiz();
+  buildConstellation();
+  switchView('view-quiz');
+  renderQuestion();
+});
+document.getElementById('btn-retry').addEventListener('click', ()=>{
+  document.body.style.background = '';
+  document.documentElement.style.removeProperty('--result-accent');
+  buildQuiz();
+  buildConstellation();
+  switchView('view-quiz');
+  renderQuestion();
+});
+document.getElementById('btn-save').addEventListener('click', drawShareCard);
+</script>
+</body>
+</html>
